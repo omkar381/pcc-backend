@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: padashetty-backend
+    env: python
+    region: singapore  # Choose a region close to your users
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        # Update this after deploying frontend to Vercel
+        value: https://your-project-name.vercel.app
+      - key: CORS_ORIGINS
+        # Update with your Vercel domains
+        value: https://your-project-name.vercel.app,http://localhost:5173
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/backend/uploads
+      sizeGB: 1  # Free tier allows 1GB of storage 
