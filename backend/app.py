@@ -959,6 +959,56 @@ def share_results_whatsapp(current_user, is_admin, test_id):
         traceback.print_exc()
         return jsonify({'message': f'Error preparing WhatsApp sharing: {str(e)}'}), 500
 
+@app.route('/api/admin/students/<int:student_id>', methods=['DELETE'])
+@token_required
+def delete_student(current_user, is_admin, student_id):
+    if not is_admin:
+        return jsonify({'message': 'Admin access required!'}), 403
+    
+    student = Student.query.get(student_id)
+    if not student:
+        return jsonify({'message': 'Student not found!'}), 404
+    
+    # Delete associated records
+    TestResult.query.filter_by(student_id=student_id).delete()
+    Attendance.query.filter_by(student_id=student_id).delete()
+    
+    # Delete admission form file if it exists
+    if student.admission_form_path and os.path.exists(student.admission_form_path):
+        try:
+            os.remove(student.admission_form_path)
+        except Exception as e:
+            print(f"Error deleting file {student.admission_form_path}: {str(e)}")
+    
+    # Delete the student record
+    db.session.delete(student)
+    db.session.commit()
+    
+    return jsonify({'message': 'Student deleted successfully!'}), 200
+
+@app.route('/api/admin/notes/<int:note_id>', methods=['DELETE'])
+@token_required
+def delete_note(current_user, is_admin, note_id):
+    if not is_admin:
+        return jsonify({'message': 'Admin access required!'}), 403
+    
+    note = Note.query.get(note_id)
+    if not note:
+        return jsonify({'message': 'Note not found!'}), 404
+    
+    # Delete the note file from the server
+    if note.file_path and os.path.exists(note.file_path):
+        try:
+            os.remove(note.file_path)
+        except Exception as e:
+            print(f"Error deleting file {note.file_path}: {str(e)}")
+    
+    # Delete the note record
+    db.session.delete(note)
+    db.session.commit()
+    
+    return jsonify({'message': 'Note deleted successfully!'}), 200
+
 # Initialize database with admin user
 def create_tables_and_admin():
     with app.app_context():
